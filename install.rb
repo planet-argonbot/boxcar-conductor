@@ -13,7 +13,7 @@ end
 
 # copy static assets
 begin 
-  copy_file 'Capify.example'
+  copy_file 'Capfile.example'
   copy_file 'deploy.rb.example'  
 rescue Exception => e
   puts "There are problems copying Boxcar configuration files to you app: #{e.message}"
