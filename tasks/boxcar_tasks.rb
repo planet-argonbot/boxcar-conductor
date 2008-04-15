@@ -97,9 +97,9 @@ set :today, Time.now.strftime('%b %d, %Y').to_s
 namespace :boxcar do
   
   desc 'Configure your Boxcar environment'
-  task :setup do
-    deploy.setup    
+  task :setup do    
     run "mkdir -p /home/#{boxcar_username}/etc /home/#{boxcar_username}/log /home/#{boxcar_username}/sites"
+    run "mkdir -p #{shared_dir}/log"
     database.configure
     mongrel.cluster.generate
   end
