@@ -8,11 +8,6 @@ Usage
 
 ./script/plugin install git://github.com/robbyrussell/boxcar-conductor.git
 
-# Change your Boxcar IP / Hostname
-# Change your Boxcar deployment user
-
-mate config/deploy.rb
-
 # Configure your Boxcar 
 cap boxcar:config
 
@@ -22,6 +17,6 @@ cap deploy
 
 Feature Requests / Bugs
 
-* http://planetargon.lighthouseapp.com/projects/5187-open-source-projects
+* http://planetargon.lighthouseapp.com/projects/9962-boxcar-conductor
 
 Copyright (c) 2008 Robby Russell
