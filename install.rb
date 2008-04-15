@@ -8,7 +8,7 @@ end
 # copy example files to application directories
 begin 
   copy_file 'Capfile.example', File.join(File.dirname(__FILE__), 'templates'), RAILS_ROOT
-  copy_file 'deploy.rb.example' File.join(File.dirname(__FILE__), 'templates'), File.join(RAILS_ROOT, 'config')
+  copy_file 'deploy.rb.example', File.join(File.dirname(__FILE__), 'templates'), File.join(RAILS_ROOT, 'config')
 rescue Exception => e
   puts "There are problems copying Boxcar configuration files to you app: #{e.message}"
 end
