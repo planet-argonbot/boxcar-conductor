@@ -5,10 +5,13 @@ def copy(file_name, from_dir, to_dir)
   FileUtils.cp from, to, :verbose => true unless File.exist?(to)
 end
 
-# copy example files to application directories
+# copy config files to application directory
 begin 
-  copy_file 'Capfile.example', File.join(File.dirname(__FILE__), 'templates'), RAILS_ROOT
-  copy_file 'deploy.rb.example', File.join(File.dirname(__FILE__), 'templates'), File.join(RAILS_ROOT, 'config')
+  templates_dir = File.join(File.dirname(__FILE__), 'templates')
+  config_dir = File.join(RAILS_ROOT, 'config')
+  root_dir = File.join(RAILS_ROOT)
+  copy 'Capfile.example', templates_dir, root_dir
+  copy 'deploy.rb.example', templates_dir, config_dir
 rescue Exception => e
   puts "There are problems copying Boxcar configuration files to you app: #{e.message}"
 end
