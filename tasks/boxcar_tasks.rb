@@ -98,6 +98,7 @@ namespace :boxcar do
   
   desc 'Configure your Boxcar environment'
   task :setup do
+    deploy.setup    
     run "mkdir -p /home/#{boxcar_username}/etc /home/#{boxcar_username}/log /home/#{boxcar_username}/sites"
     database.configure
     mongrel.cluster.generate
