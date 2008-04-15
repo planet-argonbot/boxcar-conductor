@@ -1,5 +1,6 @@
 # Required for using Mongrel with Capistrano2
 #   gem install palmtree
+
 require 'palmtree/recipes/mongrel_cluster'
 
 ########################################################################
@@ -13,21 +14,22 @@ set :application_name, 'rubyurl'
 
 # What is the hostname of your Rails Boxcar server?
 # Example: 
-#    set :boxcar_server, 'rc1.railsboxcar.com'
-set :boxcar_server, '198.145.115.92'
+#   set :boxcar_server, 'rc1.railsboxcar.com'
+set :boxcar_server, '198.145.115.XX'
 
 # What is the username of your Rails Boxcar user that you want
 # to deploy this application with?
-# Example:
-#   set :boxcar_username, 'johnny'
-set :boxcar_username, 'cappy'
+
+set :boxcar_username, 'tarzan'
 
 # Where is your source code repository?
-# Example:
-#   set :repository = 'http://svn.railsboxcar.com/my_cool_app/tags/CURRENT'
-# set :svn_username, 'rubyurl'
-# set :svn_repository_url, 'https://svn.roundhaus.com/planetargon/rubyurl_2-0/trunk'
+#
+# Subversion Example:
 
-set :repository, "git://github.com/robbyrussell/rubyurl.git"
+#   set :svn_username, 'rubyurl'
+#   set :svn_repository_url, 'https://svn.roundhaus.com/planetargon/rubyurl_2-0/trunk'
+#
+# Git Example:
+#   
 set :scm, "git"
-# set :scm_passphrase, "p00p"
+set :repository, "git://github.com/robbyrussell/rubyurl.git"
