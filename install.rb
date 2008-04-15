@@ -7,7 +7,7 @@ end
 
 def copy_file(file_name)
   templates = File.join(File.dirname(__FILE__), 'templates')
-  config_dir = File.join(RAILS_ROOT, 'config/')
+  config_dir = File.join(RAILS_ROOT, 'config')
   copy file_name, templates, config_dir 
 end
 
