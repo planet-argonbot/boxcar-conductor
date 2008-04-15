@@ -70,7 +70,7 @@ set :etc, "#{home}/etc"
 set :log, "#{home}/log"
 set :deploy_to, "#{home}/sites/#{application_name}"
 
-set :shared_dir, "#{deploy_to}/shared"
+set :app_shared_dir, "#{deploy_to}/shared"
 
 
 # mongrel
@@ -97,18 +97,19 @@ set :today, Time.now.strftime('%b %d, %Y').to_s
 namespace :boxcar do
   
   desc 'Configure your Boxcar environment'
-  task :setup do    
-    run "mkdir -p /home/#{boxcar_username}/etc /home/#{boxcar_username}/log /home/#{boxcar_username}/sites"
-    run "mkdir -p #{shared_dir}/log"
+  task :config do
+    run "mkdir -p #{home}/etc #{home}/log #{home}/sites #{app_shared_dir}/config"
+    run "mkdir -p #{app_shared_dir}/config"     
     database.configure
     mongrel.cluster.generate
   end
+  before "boxcar:config", "deploy:setup"
 
   namespace :deploy do 
     desc "Link in the production database.yml" 
     task :link_files do
-      run "ln -nfs #{shared_dir}/config/database.yml #{release_path}/config/database.yml"
-      run "ln -nfs #{shared_dir}/log #{release_path}/log"
+      run "ln -nfs #{app_shared_dir}/config/database.yml #{release_path}/config/database.yml"
+      run "ln -nfs #{app_shared_dir}/log #{release_path}/log"
     end    
   end
   
@@ -116,7 +117,7 @@ namespace :boxcar do
     desc "Configure your Boxcar database"
     task :configure do
       database_configuration = render_erb_template("#{boxcar_conductor_templates}/databases/#{database_adapter}.yml.erb")      
-      put database_configuration, "#{shared_dir}/config/database.yml"
+      put database_configuration, "#{app_shared_dir}/config/database.yml"
     end
   end
   
@@ -124,7 +125,6 @@ namespace :boxcar do
     namespace :cluster do
       desc "Generate mongrel cluster configuration" 
       task :generate do
-        run "mkdir -p #{shared_dir}/config" 
         mongrel_cluster_configuration = render_erb_template("#{boxcar_conductor_templates}/mongrel_cluster.yml.erb")
         put mongrel_cluster_configuration, mongrel_conf  
       end
