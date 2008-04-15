@@ -1,8 +1,8 @@
 Boxcar Conductor
 ==============
 
-This plugin provides you with deployment tools for your Rails application, which 
-will help you deploy to your RailsBoxcar.com instance.
+This plugin provides you with deployment tools for your Rails application,
+which will help you deploy to your RailsBoxcar.com instance.
 
 Usage
 
