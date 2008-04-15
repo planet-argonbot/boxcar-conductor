@@ -96,14 +96,14 @@ set :today, Time.now.strftime('%b %d, %Y').to_s
  
 namespace :boxcar do
   
-  namespace :config do
-    desc 'Configure your Boxcar environment'
-    task :setup do
-      run "mkdir -p /home/#{boxcar_username}/etc /home/#{boxcar_username}/log /home/#{boxcar_username}/sites"
-      database.configure
-      mongrel.cluster.generate
-    end
+  desc 'Configure your Boxcar environment'
+  task :setup do
+    run "mkdir -p /home/#{boxcar_username}/etc /home/#{boxcar_username}/log /home/#{boxcar_username}/sites"
+    database.configure
+    mongrel.cluster.generate
+  end
 
+  namespace :deploy do 
     desc "Link in the production database.yml" 
     task :link_files do
       run "ln -nfs #{shared_dir}/config/database.yml #{release_path}/config/database.yml"
@@ -131,7 +131,7 @@ namespace :boxcar do
     end
   end
 
- after "deploy:update_code", "boxcar:link_files"
+ after "deploy:update_code", "boxcar:deploy:link_files"
  
 end
 

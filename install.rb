@@ -12,6 +12,12 @@ begin
   root_dir = File.join(RAILS_ROOT)
   copy 'Capfile.example', templates_dir, root_dir
   copy 'deploy.rb.example', templates_dir, config_dir
+  puts "#############################################"
+  puts "# Boxcar Conductor -- INSTALLED! "
+  puts "#   Next steps:"
+  puts "#     1. Edit config/deploy.rb"
+  puts "#     2. Run cap boxcar:setup"  
+  puts "#############################################"  
 rescue Exception => e
   puts "There are problems copying Boxcar configuration files to you app: #{e.message}"
 end
