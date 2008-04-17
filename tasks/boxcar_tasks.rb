@@ -24,8 +24,8 @@ role :db, boxcar_server, :primary => true
 # What database server are you using?
 # Example:
 set :database_name, { :development  => "#{application_name}_development",
-                      :test         => '#{application_name}_test',
-                      :production   => '#{application_name}_production' }
+                      :test         => "#{application_name}_test",
+                      :production   => "#{application_name}_production" }
                       
 # user
 set :user, boxcar_username
