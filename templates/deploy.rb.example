@@ -18,7 +18,8 @@ set :application_name, 'rubyurl'
 set :boxcar_server, '198.145.115.XX'
 
 # What is the username of your Rails Boxcar user that you want
-# to deploy this application with?
+# to deploy this application with? (If you're using Subversion you should
+# use the same name as you use to access your repository.)
 
 set :boxcar_username, 'tarzan'
 
@@ -26,8 +27,9 @@ set :boxcar_username, 'tarzan'
 #
 # Subversion Example:
 
-#   set :svn_username, 'rubyurl'
-#   set :svn_repository_url, 'https://svn.roundhaus.com/planetargon/rubyurl_2-0/trunk'
+#set :svn_username, 'rubyurl'
+#set :repository, 'https://svn.roundhaus.com/planetargon/rubyurl_2-0/trunk'
+
 #
 # Git Example:
 #   
