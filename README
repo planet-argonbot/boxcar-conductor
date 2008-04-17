@@ -29,6 +29,13 @@ script/plugin install git://github.com/robbyrussell/boxcar-conductor.git
 
 Otherwise, you can just do a manual install by following these steps:
 
+0.9) If you have git installed on your machine, just go into your
+    vendor/plugins directory and do
+    
+git clone git://github.com/robbyrussell/boxcar-conductor.git
+
+    And then skip to step 3. Otherwise...
+
 1) Download a tarball of the latest release from
 
 http://github.com/robbyrussell/boxcar-conductor/tarball/master
