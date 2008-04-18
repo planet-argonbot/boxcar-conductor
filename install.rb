@@ -16,7 +16,7 @@ begin
   puts "# Boxcar Conductor -- INSTALLED! "
   puts "#   Next steps:"
   puts "#     1. Edit config/deploy.rb"
-  puts "#     2. Run cap boxcar:setup"  
+  puts "#     2. Run cap boxcar:config"  
   puts "#############################################"  
 rescue Exception => e
   puts "There are problems copying Boxcar configuration files to you app: #{e.message}"
