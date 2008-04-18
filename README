@@ -55,7 +55,7 @@ cap boxcar:config
 
 ## Deploy! ##
 
-cap deploy
+cap deploy:cold
 
 
 ## Done! ##

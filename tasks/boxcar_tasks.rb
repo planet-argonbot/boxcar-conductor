@@ -52,7 +52,13 @@ set :database_adapter, Proc.new {
     menu.choices(:postgresql, :mysql) 
   end
 }
-set :database_password, Proc.new { HighLine.ask("What is your database user's password?  ") { |q| q.echo = "x" } }
+set :database_password, Proc.new { database_first = "" # Keeping asking for the password until they get it right twice in a row.
+                                   loop do
+                                     database_first = HighLine.ask("Please enter your database user's password:  ") { |q| q.echo = "." }
+                                     database_confirm = HighLine.ask("Please retype the password to confirm:  ") { |q| q.echo = "." }
+				     break if database_first == database_confirm
+				   end 
+				   database_first }
 set :database_socket, Proc.new { HighLine.ask("Where is the MySQL socket file?  ") { |q| q.default = "/var/run/mysqld/mysqld.sock" } }
 set :database_port, Proc.new { 
   HighLine.ask("What port does your database run on?  ") do |q| 
