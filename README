@@ -22,7 +22,7 @@ fastthread
 If you're running a recent version of Rails, you can just install the
 plugin directly by doing:
 
-script/plugin install git://github.com/robbyrussell/boxcar-conductor.git
+script/plugin install git://github.com/planetargon/boxcar-conductor.git
 
 
 ## Manual Installation ##
@@ -32,13 +32,13 @@ Otherwise, you can just do a manual install by following these steps:
 0.9) If you have git installed on your machine, just go into your
     vendor/plugins directory and do
     
-git clone git://github.com/robbyrussell/boxcar-conductor.git
+git clone git://github.com/planetargon/boxcar-conductor.git
 
     And then skip to step 3. Otherwise...
 
 1) Download a tarball of the latest release from
 
-http://github.com/robbyrussell/boxcar-conductor/tarball/master
+http://github.com/planetargon/boxcar-conductor/tarball/master
 
 2) Untar this into your vendor/plugins directory, and rename the resulting
    folder to boxcar-conductor
