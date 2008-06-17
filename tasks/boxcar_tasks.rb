@@ -104,8 +104,8 @@ namespace :boxcar do
   
   desc 'Configure your Boxcar environment'
   task :config do
-    run "mkdir -p #{home}/etc #{home}/log #{home}/sites #{app_shared_dir}/config"
-    run "mkdir -p #{app_shared_dir}/config"     
+    run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
+    run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"     
     database.configure
     mongrel.cluster.generate
   end
