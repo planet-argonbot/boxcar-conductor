@@ -12,7 +12,7 @@ before you begin:
 
 mongrel mongrel_cluster palmtree capistrano
 
-With newever versions of capistrano you should install the following:
+With newer versions of capistrano you should install the following:
 
 fastthread
 
@@ -29,10 +29,10 @@ script/plugin install git://github.com/planetargon/boxcar-conductor.git
 
 Otherwise, you can just do a manual install by following these steps:
 
-0.9) If you have git installed on your machine, just go into your
-    vendor/plugins directory and do
+0.9) If you have git installed on your machine, run the following from
+     your application root directory:
     
-git clone git://github.com/planetargon/boxcar-conductor.git
+git submodule add git://github.com/planetargon/boxcar-conductor.git vendor/plugins/boxcar-conductor
 
     And then skip to step 3. Otherwise...
 
