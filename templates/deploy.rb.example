@@ -42,6 +42,9 @@ set :boxcar_username, 'tarzan'
 set :scm, "git"
 set :repository, "git@github.com:/robbyrussell/rubyurl.git"
 
+# If you're using git submodules in your project, enable support for them
+# by uncommenting the following
+#set :git_enable_submodules, 1
 
 
 ###################################################
