@@ -46,6 +46,14 @@ set :repository, "git@github.com:/robbyrussell/rubyurl.git"
 # by uncommenting the following
 #set :git_enable_submodules, 1
 
+# Store a local copy of your project on the server and only pull changes.
+# Significantly speeds up deployments.
+set :deploy_via, :remote_cache
+
+# Allows you to use your local SSH key during deployments instead of creating
+# a separate deployment user key with no password.
+# ssh_options[:forward_agent] = true
+
 
 ###################################################
 # CUSTOM TASKS
