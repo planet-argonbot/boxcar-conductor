@@ -10,11 +10,16 @@ which will help you deploy to your RailsBoxcar.com instance.
 You'll want to make sure that you have the following gems installed
 before you begin:
 
-mongrel mongrel_cluster palmtree capistrano
+palmtree capistrano
 
 With newer versions of capistrano you should install the following:
 
 fastthread
+
+If you plan on using mongrel + nginx instead of Phusion Passenger, you
+should also install the following gems:
+
+mongrel mongrel_cluster
 
 
 ## Automatic Installation ##
@@ -63,4 +68,4 @@ Feature Requests / Bugs
 
 * http://planetargon.lighthouseapp.com/projects/9962-boxcar-conductor
 
-Copyright (c) 2008 Robby Russell
+Copyright (c) 2009 Planet Argon

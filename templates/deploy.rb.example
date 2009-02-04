@@ -54,6 +54,23 @@ set :deploy_via, :remote_cache
 # a separate deployment user key with no password.
 # ssh_options[:forward_agent] = true
 
+###################################################
+# PASSENGER (mod_rails) SUPPORT
+###################################################
+#
+# Boxcar Conductor is optimized to work with Phusion Passenger. If you are planning
+# on using mongrel + nginx, comment out the following block.
+namespace :deploy do
+  desc "Restart Application"
+  task :restart, :roles => :app do
+    run "touch #{current_path}/tmp/restart.txt"
+  end
+
+  desc "Start Application"
+  task :start, :roles => :app do
+    # Do nothing to prevent errors during deploy:cold
+  end
+end
 
 ###################################################
 # CUSTOM TASKS
