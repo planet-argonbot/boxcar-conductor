@@ -38,24 +38,25 @@ set :db_test, database_name[:test]
 set :db_production, database_name[:production]
 
 # Prompt user to set database user/pass
-set :database_username, Proc.new { HighLine.ask("What is your database username?  ") { |q| q.default = "dbuser" } }
+set :database_username, Proc.new { HighLine.ask("                     What is your database username?  ") { |q| q.default = "dbuser" } }
 set :database_host, Proc.new {
   if setup_type.to_s == "quick"
     "localhost"
   else
-    HighLine.ask("What host is your database running on?  ") { |q| q.default = "localhost" }
+    HighLine.ask("           What host is your database running on?  ") { |q| q.default = "localhost" }
   end
 }
 set :database_adapter, Proc.new {
   choose do |menu|
-    menu.prompt = "What database server will you be using?"
+    menu.layout = :one_line
+    menu.prompt = "What database server will you be using?  "
     menu.choices(:postgresql, :mysql)
   end
 }
 set :database_password, Proc.new { database_first = "" # Keeping asking for the password until they get it right twice in a row.
                                    loop do
-                                     database_first = HighLine.ask("Please enter your database user's password:  ") { |q| q.echo = "." }
-                                     database_confirm = HighLine.ask("Please retype the password to confirm:       ") { |q| q.echo = "." }
+                                     database_first = HighLine.ask("                   Please enter your database user's password:  ") { |q| q.echo = "." }
+                                     database_confirm = HighLine.ask("                        Please retype the password to confirm:  ") { |q| q.echo = "." }
 				     break if database_first == database_confirm
 				   end
 				   database_first }
@@ -75,7 +76,7 @@ set :database_port, Proc.new {
       "3306"
     end
   else
-    HighLine.ask("What port does your database run on?  ") do |q|
+    HighLine.ask("                  What port does your database run on?  ") do |q|
       if database_adapter.to_s == "postgresql"
         q.default = "5432"
       else
@@ -88,7 +89,8 @@ set :database_port, Proc.new {
 # server type
 set :server_type, Proc.new {
   choose do |menu|
-    menu.prompt = "What web server will you be using?"
+    menu.layout = :one_line
+    menu.prompt = "    What web server will you be using?  "
     menu.choices(:passenger, :mongrel)
   end
 }
@@ -104,20 +106,26 @@ set :app_shared_dir, "#{deploy_to}/shared"
 
 # mongrel
 # What port number should your mongrel cluster start on?
-set :mongrel_port, Proc.new { HighLine.ask("What port will your mongrel cluster start with?  ") { |q| q.default = "8000" } }
+set :mongrel_port, Proc.new {
+  HighLine.ask("       What port will your mongrel cluster start with?  ", Integer) do |q|
+    q.default = 8000
+    q.in = 1024..65536
+  end
+}
 
 # How many instances of mongrel should be in your cluster?
 set :mongrel_servers, Proc.new {
- choose do |menu|
-    menu.prompt = "How many mongrel servers should run?"
-    menu.choices(1,2,3)
- end
+  HighLine.ask("                     How many mongrel servers should run?  ", Integer) do |q|
+    q.default=3
+    q.in = 1..10
+  end
 }
 
 # what type of setup does the user want?
 set :setup_type, Proc.new {
   choose do |menu|
-    menu.prompt = "What type of setup would you like?"
+    menu.layout = :one_line
+    menu.prompt = "         What type of setup would you like?  "
     menu.choices(:quick, :custom)
   end
 }
@@ -136,10 +144,13 @@ namespace :boxcar do
   task :config do
     run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
     run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
+    puts ""
     setup_type
     database.configure
     mongrel.cluster.generate unless server_type == :passenger
+    puts ""
     say "Setup complete. Now run cap deploy:cold and you should be all set."
+    puts ""
   end
   before "boxcar:config", "deploy:setup"
 

@@ -55,7 +55,7 @@ http://github.com/planetargon/boxcar-conductor/tarball/master
 
 ## Configure your Boxcar ##
 
-cap boxcar:config
+cap boxcar:config -q
 
 
 ## Deploy! ##
