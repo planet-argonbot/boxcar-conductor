@@ -65,7 +65,7 @@ set :database_port, Proc.new {
 }
 
 # directories
-set :home, "/home/#{user}"
+set :home, "/Users/#{user}"
 set :etc, "#{home}/etc"
 set :log, "#{home}/log"
 set :deploy_to, "#{home}/sites/#{application_name}"
@@ -97,8 +97,8 @@ set :today, Time.now.strftime('%b %d, %Y').to_s
 namespace :boxcar do
   desc 'Configure your Boxcar environment'
   task :config do
-    #run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
-    #run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
+    run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
+    run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
     database.configure
     mongrel.cluster.generate
   end
