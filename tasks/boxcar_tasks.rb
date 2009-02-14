@@ -55,7 +55,7 @@ set :database_adapter, Proc.new {
 set :database_password, Proc.new { database_first = "" # Keeping asking for the password until they get it right twice in a row.
                                    loop do
                                      database_first = HighLine.ask("Please enter your database user's password:  ") { |q| q.echo = "." }
-                                     database_confirm = HighLine.ask("Please retype the password to confirm:  ") { |q| q.echo = "." }
+                                     database_confirm = HighLine.ask("Please retype the password to confirm:       ") { |q| q.echo = "." }
 				     break if database_first == database_confirm
 				   end 
 				   database_first }
