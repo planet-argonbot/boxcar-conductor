@@ -96,7 +96,7 @@ set :server_type, Proc.new {
 }
 
 # directories
-set :home, "/Users/#{user}"
+set :home, "/home/#{user}"
 set :etc, "#{home}/etc"
 set :log, "#{home}/log"
 set :deploy_to, "#{home}/sites/#{application_name}"
