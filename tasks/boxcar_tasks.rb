@@ -39,7 +39,13 @@ set :db_production, database_name[:production]
 
 # Prompt user to set database user/pass
 set :database_username, Proc.new { HighLine.ask("What is your database username?  ") { |q| q.default = "dbuser" } }
-set :database_host, Proc.new { HighLine.ask("What host is your database running on?  ") { |q| q.default = "localhost" } }
+set :database_host, Proc.new {
+  if setup_type.to_s == "quick"
+    "localhost"
+  else
+    HighLine.ask("What host is your database running on?  ") { |q| q.default = "localhost" }
+  end
+}
 set :database_adapter, Proc.new {
   choose do |menu|
     menu.prompt = "What database server will you be using?"
@@ -53,13 +59,28 @@ set :database_password, Proc.new { database_first = "" # Keeping asking for the 
 				     break if database_first == database_confirm
 				   end
 				   database_first }
-set :database_socket, Proc.new { HighLine.ask("Where is the MySQL socket file?  ") { |q| q.default = "/var/run/mysqld/mysqld.sock" } }
+set :database_socket, Proc.new {
+  if setup_type.to_s == "quick"
+    "/var/run/mysqld/mysqld.sock"
+  else
+    HighLine.ask("Where is the MySQL socket file?  ") { |q| q.default = "/var/run/mysqld/mysqld.sock" }
+  end
+}
+
 set :database_port, Proc.new {
-  HighLine.ask("What port does your database run on?  ") do |q|
+  if setup_type.to_s == "quick"
     if database_adapter.to_s == "postgresql"
-      q.default = "5432"
+      "5432"
     else
-      q.default = "3306" 
+      "3306"
+    end
+  else
+    HighLine.ask("What port does your database run on?  ") do |q|
+      if database_adapter.to_s == "postgresql"
+        q.default = "5432"
+      else
+        q.default = "3306" 
+      end
     end
   end
 }
@@ -90,6 +111,14 @@ set :mongrel_servers, Proc.new {
  choose do |menu|
     menu.prompt = "How many mongrel servers should run?"
     menu.choices(1,2,3)
+ end
+}
+
+# what type of setup does the user want?
+set :setup_type, Proc.new {
+  choose do |menu|
+    menu.prompt = "What type of setup would you like?"
+    menu.choices(:quick, :custom)
   end
 }
 
@@ -107,8 +136,10 @@ namespace :boxcar do
   task :config do
     run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
     run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
+    setup_type
     database.configure
     mongrel.cluster.generate unless server_type == :passenger
+    say "Setup complete. Now run cap deploy:cold and you should be all set."
   end
   before "boxcar:config", "deploy:setup"
 
