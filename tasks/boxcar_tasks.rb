@@ -64,6 +64,14 @@ set :database_port, Proc.new {
   end
 }
 
+# server type
+set :server_type, Proc.new {
+  choose do |menu|
+    menu.prompt = "What web server will you be using?"
+    menu.choices(:passenger, :mongrel)
+  end
+}
+
 # directories
 set :home, "/Users/#{user}"
 set :etc, "#{home}/etc"
@@ -100,7 +108,7 @@ namespace :boxcar do
     run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
     run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
     database.configure
-    mongrel.cluster.generate
+    mongrel.cluster.generate unless server_type == :passenger
   end
   before "boxcar:config", "deploy:setup"
 
