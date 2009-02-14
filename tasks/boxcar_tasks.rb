@@ -104,12 +104,12 @@ namespace :boxcar do
   
   desc 'Configure your Boxcar environment'
   task :config do
-    run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
-    run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
+    #run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
+    #run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
     database.configure
     mongrel.cluster.generate
   end
-  before "boxcar:config", "deploy:setup"
+  #before "boxcar:config", "deploy:setup"
 
   namespace :deploy do 
     desc "Link in the production database.yml" 
