@@ -183,3 +183,16 @@ namespace :boxcar do
   after "deploy:update_code", "boxcar:deploy:link_files"
 
 end
+
+def indentstring(inputstring, placement = :begin)
+  #the size of the print "buffer". This should be >= the length of the longest string to be printed
+  printgap = "                                                               "
+  if placement == :begin
+    pgsize = printgap.length - 1
+    strsize = inputstring.length - 1
+    printgap[pgsize - strsize, pgsize] = inputstring
+    inputstring = printgap
+  elsif placement == :end
+    inputstring = printgap + "  " + inputstring
+  end
+end
