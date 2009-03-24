@@ -152,12 +152,37 @@ namespace :boxcar do
     puts ""
     setup_type
     database.configure
+    setup
     mongrel.cluster.generate unless server_type == :passenger
     puts ""
     say "Setup complete. Now run cap deploy:cold and you should be all set."
     puts ""
   end
   before "boxcar:config", "deploy:setup"
+
+  desc 'Install and configure databases'
+  task :setup, :roles => :admin_web do
+    if database_adapter.to_s == "postgresql"
+      prettyprint "Installing and configuring PostgreSQL:  "
+      run 'aptitude -y -q install postgresql libpq-dev > /dev/null', :pty => true
+      prettyputs "PostgreSQL installed", :end
+      run 'gem install pg --no-ri --no-rdoc -q', {:shell => '/bin/bash --login', :pty => true}
+      prettyputs "pg gem installed", :end
+      psqlconfig = "CREATE ROLE #{database_username} PASSWORD '#{database_password}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN; CREATE DATABASE #{db_production} OWNER #{database_username};"
+      put psqlconfig, "/tmp/setupdb.sql"
+      run "psql < /tmp/setupdb.sql", :shell => 'su postgres'
+      run "rm -f /tmp/setupdb.sql"
+      prettyputs "database configured\ndone", :end
+    elsif database_adapter.to_s == "mysql"
+      #DEBIAN_PRIORITY necessary since debconf keeps asking for a root user password for mysql
+      run 'DEBIAN_PRIORITY=critical aptitude -y -q install mysql-server mysql-client libmysqlclient15-dev > /dev/null', :pty => true
+      run 'gem install mysql --no-ri --no-rdoc -q', :shell => '/bin/bash --login' #need --login so that PATH gets updated
+      mysqlconfig = "CREATE DATABASE #{db_production}; GRANT ALL PRIVILEGES ON #{db_production}.* TO #{database_username} IDENTIFIED BY '#{database_password}'"
+      put mysqlconfig, "/tmp/setupdb.sql"
+      run "mysql < /tmp/setupdb.sql"
+      run "rm -f /tmp/setupdb.sql" #splitting it up keeping consistency between psql/mysql (instead &&ing the commands together)
+    end
+  end
 
   namespace :deploy do
     desc "Link in the production database.yml"
