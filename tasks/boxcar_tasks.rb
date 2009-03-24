@@ -172,15 +172,19 @@ namespace :boxcar do
       put psqlconfig, "/tmp/setupdb.sql"
       run "psql < /tmp/setupdb.sql", :shell => 'su postgres'
       run "rm -f /tmp/setupdb.sql"
-      puts indentstring("database configured\ndone", :end)
+      puts indentstring("database configured", :end)
     elsif database_adapter.to_s == "mysql"
+      puts indentstring("Installing and configuring MySQL:")
       #DEBIAN_PRIORITY necessary since debconf keeps asking for a root user password for mysql
       run 'DEBIAN_PRIORITY=critical aptitude -y -q install mysql-server mysql-client libmysqlclient15-dev > /dev/null', :pty => true
+      puts indentstring("MySQL installed", :end)
       run 'gem install mysql --no-ri --no-rdoc -q', :shell => '/bin/bash --login' #need --login so that PATH gets updated
+      puts indentstring("mysql gem installed", :end)
       mysqlconfig = "CREATE DATABASE #{db_production}; GRANT ALL PRIVILEGES ON #{db_production}.* TO #{database_username} IDENTIFIED BY '#{database_password}'"
       put mysqlconfig, "/tmp/setupdb.sql"
       run "mysql < /tmp/setupdb.sql"
       run "rm -f /tmp/setupdb.sql" #splitting it up keeping consistency between psql/mysql (instead &&ing the commands together)
+      puts indentstring("database configured", :end)
     end
   end
 
