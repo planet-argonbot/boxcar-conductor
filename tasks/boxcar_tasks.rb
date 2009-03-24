@@ -163,16 +163,16 @@ namespace :boxcar do
   desc 'Install and configure databases'
   task :setup, :roles => :admin_web do
     if database_adapter.to_s == "postgresql"
-      prettyprint "Installing and configuring PostgreSQL:  "
+      puts indentstring("Installing and configuring PostgreSQL:")
       run 'aptitude -y -q install postgresql libpq-dev > /dev/null', :pty => true
-      prettyputs "PostgreSQL installed", :end
+      puts indentstring("PostgreSQL installed", :end)
       run 'gem install pg --no-ri --no-rdoc -q', {:shell => '/bin/bash --login', :pty => true}
-      prettyputs "pg gem installed", :end
+      puts indentstring("pg gem installed", :end)
       psqlconfig = "CREATE ROLE #{database_username} PASSWORD '#{database_password}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN; CREATE DATABASE #{db_production} OWNER #{database_username};"
       put psqlconfig, "/tmp/setupdb.sql"
       run "psql < /tmp/setupdb.sql", :shell => 'su postgres'
       run "rm -f /tmp/setupdb.sql"
-      prettyputs "database configured\ndone", :end
+      puts indentstring("database configured\ndone", :end)
     elsif database_adapter.to_s == "mysql"
       #DEBIAN_PRIORITY necessary since debconf keeps asking for a root user password for mysql
       run 'DEBIAN_PRIORITY=critical aptitude -y -q install mysql-server mysql-client libmysqlclient15-dev > /dev/null', :pty => true
