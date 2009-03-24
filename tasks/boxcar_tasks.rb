@@ -20,6 +20,7 @@ end
 role :web, boxcar_server
 role :app, boxcar_server
 role :db, boxcar_server, :primary => true
+role :admin_web, "root@#{boxcar_server}", :no_release => true
 
 # What database server are you using?
 # Example:
@@ -31,22 +32,24 @@ set :database_name, { :development  => "#{application_name}_development",
 set :user, boxcar_username
 set :use_sudo, false
 
-set :domain_names, Proc.new { HighLine.ask("What is the primary domain name?") { |q| q.default = "railsboxcar.com" } }
+set :domain_names, Proc.new { HighLine.ask(indentstring("What is the primary domain name?")) { |q| q.default = "railsboxcar.com" } }
 
 set :db_development,database_name[:development]
 set :db_test, database_name[:test]
 set :db_production, database_name[:production]
 
 # Prompt user to set database user/pass
-set :database_username, Proc.new { HighLine.ask("                     What is your database username?  ") { |q| q.default = "dbuser" } }
+set :database_username, Proc.new { HighLine.ask(indentstring("What is your database username?")) { |q| q.default = "dbuser" } }
 set :database_host, Proc.new {
   if setup_type.to_s == "quick"
     "localhost"
   else
-    HighLine.ask("           What host is your database running on?  ") { |q| q.default = "localhost" }
+    HighLine.ask(indentstring("What host is your database running on?")) { |q| q.default = "localhost" }
   end
 }
 set :database_adapter, Proc.new {
+  # currently, this prompt constitutes the longest prompt. Be sure to update indentstring if
+  # any changes are made here
   choose do |menu|
     menu.layout = :one_line
     menu.prompt = "What database server will you be using?  "
@@ -55,8 +58,8 @@ set :database_adapter, Proc.new {
 }
 set :database_password, Proc.new { database_first = "" # Keeping asking for the password until they get it right twice in a row.
                                    loop do
-                                     database_first = HighLine.ask("                   Please enter your database user's password:  ") { |q| q.echo = "." }
-                                     database_confirm = HighLine.ask("                        Please retype the password to confirm:  ") { |q| q.echo = "." }
+                                     database_first = HighLine.ask(indentstring("Please enter your database user's password:")) { |q| q.echo = "." }
+                                     database_confirm = HighLine.ask(indentstring("Please retype the password to confirm:")) { |q| q.echo = "." }
 				     break if database_first == database_confirm
 				   end
 				   database_first }
@@ -64,7 +67,7 @@ set :database_socket, Proc.new {
   if setup_type.to_s == "quick"
     "/var/run/mysqld/mysqld.sock"
   else
-    HighLine.ask("Where is the MySQL socket file?  ") { |q| q.default = "/var/run/mysqld/mysqld.sock" }
+    HighLine.ask(indentstring("Where is the MySQL socket file?")) { |q| q.default = "/var/run/mysqld/mysqld.sock" }
   end
 }
 
@@ -76,7 +79,7 @@ set :database_port, Proc.new {
       "3306"
     end
   else
-    HighLine.ask("                  What port does your database run on?  ") do |q|
+    HighLine.ask(indentstring("What port does your database run on?") do |q|
       if database_adapter.to_s == "postgresql"
         q.default = "5432"
       else
@@ -88,6 +91,7 @@ set :database_port, Proc.new {
 
 # server type
 set :server_type, Proc.new {
+  # indenting this prompt by hand for now. Can't figure out how to work in indentstring
   choose do |menu|
     menu.layout = :one_line
     menu.prompt = "    What web server will you be using?  "
@@ -107,7 +111,7 @@ set :app_shared_dir, "#{deploy_to}/shared"
 # mongrel
 # What port number should your mongrel cluster start on?
 set :mongrel_port, Proc.new {
-  HighLine.ask("       What port will your mongrel cluster start with?  ", Integer) do |q|
+  HighLine.ask(indentstring("What port will your mongrel cluster start with?"), Integer) do |q|
     q.default = 8000
     q.in = 1024..65536
   end
@@ -115,7 +119,7 @@ set :mongrel_port, Proc.new {
 
 # How many instances of mongrel should be in your cluster?
 set :mongrel_servers, Proc.new {
-  HighLine.ask("                     How many mongrel servers should run?  ", Integer) do |q|
+  HighLine.ask(indentstring("How many mongrel servers should run?"), Integer) do |q|
     q.default=3
     q.in = 1..10
   end
@@ -123,6 +127,7 @@ set :mongrel_servers, Proc.new {
 
 # what type of setup does the user want?
 set :setup_type, Proc.new {
+  # another manual indent
   choose do |menu|
     menu.layout = :one_line
     menu.prompt = "         What type of setup would you like?  "
@@ -141,7 +146,7 @@ set :today, Time.now.strftime('%b %d, %Y').to_s
 
 namespace :boxcar do
   desc 'Configure your Boxcar environment'
-  task :config do
+  task :config, :except => { :no_release => true } do
     run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
     run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
     puts ""
@@ -156,7 +161,7 @@ namespace :boxcar do
 
   namespace :deploy do
     desc "Link in the production database.yml"
-    task :link_files do
+    task :link_files, :except => { :no_release => true } do
       run "ln -nfs #{app_shared_dir}/config/database.yml #{release_path}/config/database.yml"
       run "ln -nfs #{app_shared_dir}/log #{release_path}/log"
     end
@@ -164,7 +169,7 @@ namespace :boxcar do
 
   namespace :database do
     desc "Configure your Boxcar database"
-    task :configure do
+    task :configure, :except => { :no_release => true } do
       database_configuration = render_erb_template("#{boxcar_conductor_templates}/databases/#{database_adapter}.yml.erb")
       put database_configuration, "#{app_shared_dir}/config/database.yml"
     end
@@ -173,7 +178,7 @@ namespace :boxcar do
   namespace :mongrel do
     namespace :cluster do
       desc "Generate mongrel cluster configuration"
-      task :generate do
+      task :generate, :except => { :no_release => true } do
         mongrel_cluster_configuration = render_erb_template("#{boxcar_conductor_templates}/mongrel_cluster.yml.erb")
         put mongrel_cluster_configuration, mongrel_conf
       end
