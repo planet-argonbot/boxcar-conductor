@@ -64,13 +64,23 @@ set :database_adapter, Proc.new {
     menu.choices(:postgresql, :mysql)
   end
 }
-set :database_password, Proc.new { database_first = "" # Keeping asking for the password until they get it right twice in a row.
-                                   loop do
-                                     database_first = HighLine.ask(indentstring("Please enter your database user's password:")) { |q| q.echo = "." }
-                                     database_confirm = HighLine.ask(indentstring("Please retype the password to confirm:")) { |q| q.echo = "." }
-				     break if database_first == database_confirm
-				   end
-				   database_first }
+set :database_password, Proc.new {
+  if setup_type.to_s == "quick"
+    dbpass = newpass(16)
+    print indentstring("Creating random database password:")
+    puts indentstring(dbpass, :end)
+    dbpass
+  else
+    database_first = "" # Keeping asking for the password until they get it right twice in a row.
+    loop do
+      database_first = HighLine.ask(indentstring("Please enter your database user's password:")) { |q| q.echo = "." }
+      database_confirm = HighLine.ask(indentstring("Please retype the password to confirm:")) { |q| q.echo = "." }
+      break if database_first == database_confirm
+    end
+    database_first
+  end
+}
+
 set :database_socket, Proc.new {
   if setup_type.to_s == "quick"
     "/var/run/mysqld/mysqld.sock"
@@ -234,4 +244,7 @@ def indentstring(inputstring, placement = :begin)
   end
 end
 
-
+def createpwd(len)
+  chars = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a
+  return Array.new(len){||chars[rand(chars.size)]}.join
+end
