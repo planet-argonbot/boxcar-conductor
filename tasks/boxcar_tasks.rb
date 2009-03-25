@@ -245,7 +245,7 @@ def indentstring(inputstring, placement = :begin)
   end
 end
 
-def createpwd(len)
+def newpass(len)
   chars = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a
   return Array.new(len){||chars[rand(chars.size)]}.join
 end
