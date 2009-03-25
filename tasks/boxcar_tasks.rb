@@ -104,11 +104,15 @@ set :database_port, Proc.new {
 
 # server type
 set :server_type, Proc.new {
-  # indenting this prompt by hand for now. Can't figure out how to work in indentstring
-  choose do |menu|
-    menu.layout = :one_line
-    menu.prompt = "    What web server will you be using?  "
-    menu.choices(:passenger, :mongrel)
+  if setup_type.to_s == "quick"
+    "passenger"
+  else
+    # indenting this prompt by hand for now. Can't figure out how to work in indentstring
+    choose do |menu|
+      menu.layout = :one_line
+      menu.prompt = "    What web server will you be using?  "
+      menu.choices(:passenger, :mongrel)
+    end
   end
 }
 
