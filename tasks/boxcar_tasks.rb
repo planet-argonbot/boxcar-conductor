@@ -1,5 +1,13 @@
 require 'highline/import'
 
+# We'll handle our own printing of default options. Necessary to have
+# "nice" output using indentstring
+class HighLine::Question
+  private
+  def append_default()
+  end
+end
+
 class Capistrano::Configuration
   ##
   # Read a file and evaluate it as an ERB template.
@@ -32,19 +40,19 @@ set :database_name, { :development  => "#{application_name}_development",
 set :user, boxcar_username
 set :use_sudo, false
 
-set :domain_names, Proc.new { HighLine.ask(indentstring("What is the primary domain name?")) { |q| q.default = "railsboxcar.com" } }
+set :domain_names, Proc.new { HighLine.ask(indentstring("What is the primary domain name? |railsboxcar.com|")) { |q| q.default = "railsboxcar.com" } }
 
 set :db_development,database_name[:development]
 set :db_test, database_name[:test]
 set :db_production, database_name[:production]
 
 # Prompt user to set database user/pass
-set :database_username, Proc.new { HighLine.ask(indentstring("What is your database username?")) { |q| q.default = "dbuser" } }
+set :database_username, Proc.new { HighLine.ask(indentstring("What is your database username? |dbuser|")) { |q| q.default = "dbuser" } }
 set :database_host, Proc.new {
   if setup_type.to_s == "quick"
     "localhost"
   else
-    HighLine.ask(indentstring("What host is your database running on?")) { |q| q.default = "localhost" }
+    HighLine.ask(indentstring("What host is your database running on? |localhost|")) { |q| q.default = "localhost" }
   end
 }
 set :database_adapter, Proc.new {
@@ -67,25 +75,20 @@ set :database_socket, Proc.new {
   if setup_type.to_s == "quick"
     "/var/run/mysqld/mysqld.sock"
   else
-    HighLine.ask(indentstring("Where is the MySQL socket file?")) { |q| q.default = "/var/run/mysqld/mysqld.sock" }
+    HighLine.ask(indentstring("Where is the MySQL socket file? |/var/run/mysqld/mysqld.sock|")) { |q| q.default = "/var/run/mysqld/mysqld.sock" }
   end
 }
 
 set :database_port, Proc.new {
-  if setup_type.to_s == "quick"
-    if database_adapter.to_s == "postgresql"
-      "5432"
-    else
-      "3306"
-    end
+  if database_adapter.to_s == "postgresql"
+    default = "5432"
   else
-    HighLine.ask(indentstring("What port does your database run on?") do |q|
-      if database_adapter.to_s == "postgresql"
-        q.default = "5432"
-      else
-        q.default = "3306" 
-      end
-    end
+    default = "3306"
+  end
+  if setup_type.to_s == "quick"
+    default
+  else
+    HighLine.ask(indentstring("What port does your database run on? |#{default}|")) { |q| q.default=default }
   end
 }
 
@@ -111,7 +114,7 @@ set :app_shared_dir, "#{deploy_to}/shared"
 # mongrel
 # What port number should your mongrel cluster start on?
 set :mongrel_port, Proc.new {
-  HighLine.ask(indentstring("What port will your mongrel cluster start with?"), Integer) do |q|
+  HighLine.ask(indentstring("What port will your mongrel cluster start with? |8000|"), Integer) do |q|
     q.default = 8000
     q.in = 1024..65536
   end
@@ -119,7 +122,7 @@ set :mongrel_port, Proc.new {
 
 # How many instances of mongrel should be in your cluster?
 set :mongrel_servers, Proc.new {
-  HighLine.ask(indentstring("How many mongrel servers should run?"), Integer) do |q|
+  HighLine.ask(indentstring("How many mongrel servers should run? |3|"), Integer) do |q|
     q.default=3
     q.in = 1..10
   end
@@ -163,9 +166,9 @@ namespace :boxcar do
   desc 'Install and configure databases'
   task :setup, :roles => :admin_web do
     if database_adapter.to_s == "postgresql"
-      puts indentstring("Installing and configuring PostgreSQL:")
+      print indentstring("Installing and configuring PostgreSQL:")
       run 'aptitude -y -q install postgresql libpq-dev > /dev/null', :pty => true
-      puts indentstring("PostgreSQL installed", :end)
+      puts "PostgreSQL installed"
       run 'gem install pg --no-ri --no-rdoc -q', {:shell => '/bin/bash --login', :pty => true}
       puts indentstring("pg gem installed", :end)
       psqlconfig = "CREATE ROLE #{database_username} PASSWORD '#{database_password}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN; CREATE DATABASE #{db_production} OWNER #{database_username};"
@@ -174,10 +177,10 @@ namespace :boxcar do
       run "rm -f /tmp/setupdb.sql"
       puts indentstring("database configured", :end)
     elsif database_adapter.to_s == "mysql"
-      puts indentstring("Installing and configuring MySQL:")
+      print indentstring("Installing and configuring MySQL:")
       #DEBIAN_PRIORITY necessary since debconf keeps asking for a root user password for mysql
       run 'DEBIAN_PRIORITY=critical aptitude -y -q install mysql-server mysql-client libmysqlclient15-dev > /dev/null', :pty => true
-      puts indentstring("MySQL installed", :end)
+      puts "MySQL installed"
       run 'gem install mysql --no-ri --no-rdoc -q', :shell => '/bin/bash --login' #need --login so that PATH gets updated
       puts indentstring("mysql gem installed", :end)
       mysqlconfig = "CREATE DATABASE #{db_production}; GRANT ALL PRIVILEGES ON #{db_production}.* TO #{database_username} IDENTIFIED BY '#{database_password}'"
@@ -220,13 +223,15 @@ end
 
 def indentstring(inputstring, placement = :begin)
   #the size of the print "buffer". This should be >= the length of the longest string to be printed
-  printgap = "                                                               "
+  printgap = "                                                              "
   if placement == :begin
     pgsize = printgap.length - 1
     strsize = inputstring.length - 1
     printgap[pgsize - strsize, pgsize] = inputstring
-    inputstring = printgap
+    inputstring = printgap + "  "
   elsif placement == :end
     inputstring = printgap + "  " + inputstring
   end
 end
+
+
