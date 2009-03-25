@@ -68,7 +68,7 @@ set :database_password, Proc.new {
   if setup_type.to_s == "quick"
     dbpass = newpass(16)
     print indentstring("Creating random database password:")
-    puts indentstring(dbpass, :end)
+    puts "  #{dbpass}"
     dbpass
   else
     database_first = "" # Keeping asking for the password until they get it right twice in a row.
