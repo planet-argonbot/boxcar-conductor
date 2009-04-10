@@ -105,7 +105,7 @@ set :database_port, Proc.new {
 # server type
 set :server_type, Proc.new {
   if setup_type.to_s == "quick"
-    "passenger"
+    :passenger
   else
     # indenting this prompt by hand for now. Can't figure out how to work in indentstring
     choose do |menu|
