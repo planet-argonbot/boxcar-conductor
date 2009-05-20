@@ -6,14 +6,14 @@ require 'palmtree/recipes/mongrel_cluster'
 ########################################################################
 # Rails Boxcar - Capistrano Deployment Recipe
 # Configuration
-######################################################################## 
+########################################################################
 # What is the name of your application? (no spaces)
-# Example: 
+# Example:
 #   set :application_name, 'my_cool_app'
 set :application_name, 'rubyurl'
 
 # What is the hostname of your Rails Boxcar server?
-# Example: 
+# Example:
 #   set :boxcar_server, 'rc1.railsboxcar.com'
 set :boxcar_server, '198.145.115.XX'
 
@@ -38,7 +38,7 @@ set :boxcar_username, 'tarzan'
 
 #
 # Git Example:
-#   
+#
 set :scm, "git"
 set :repository, "git@github.com:/robbyrussell/rubyurl.git"
 
@@ -78,18 +78,18 @@ end
 #
 # By default, Boxcar Conductor will add symlinks for the following:
 #   * config/database.yml
-#   * log/  
-# 
+#   * log/
+#
 # If you'd like to have Boxcar Conductor symlink any other files and/or directories,
 # you can add in a custom task at the bottom of this deploy.rb by following this example:
 #
 # namespace :example do
-#   desc "Link more remote files" 
+#   desc "Link more remote files"
 #   task :link_remote_files do
 #     run "ln -nfs #{app_shared_dir}/data #{release_path}/data"
-#     run "ln -nfs #{app_shared_dir}/exports #{release_path}/public/exports"    
+#     run "ln -nfs #{app_shared_dir}/exports #{release_path}/public/exports"
 #   end
 # end
-# 
+#
 # after "boxcar:deploy:link_files", "example:link_remote_files"
 #

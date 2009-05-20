@@ -36,7 +36,7 @@ Otherwise, you can just do a manual install by following these steps:
 
 0.9) If you have git installed on your machine, run the following from
      your application root directory:
-    
+
 git submodule add git://github.com/planetargon/boxcar-conductor.git vendor/plugins/boxcar-conductor
 
     And then skip to step 3. Otherwise...
