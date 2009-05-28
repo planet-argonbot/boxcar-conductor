@@ -170,6 +170,7 @@ namespace :boxcar do
     setup_type
     database.configure
     setup
+    createdb
     mongrel.cluster.generate unless server_type == :passenger
     puts ""
     say "Setup complete. Now run cap deploy:cold and you should be all set."
@@ -179,31 +180,53 @@ namespace :boxcar do
 
   desc 'Install and configure databases'
   task :setup, :roles => :admin_web do
-    puts "\n\nNow installing and configuring your database. This process can take"
-    puts "a few minutes, so go get a cup of coffee, relax, and then come back.\n\n"
+    # Setting up some variables. Note that testdb *must* include the negation
     if database_adapter.to_s == "postgresql"
-      print indentstring("Installing and configuring PostgreSQL:")
-      run 'aptitude -y -q install postgresql libpq-dev > /dev/null', :pty => true
-      puts "PostgreSQL installed"
-      run 'gem install pg --no-ri --no-rdoc -q', {:shell => '/bin/bash --login', :pty => true}
-      puts indentstring("pg gem installed", :end)
+      installdb  = 'postgresql libpq-dev'
+      dbname = "PostgreSQL"
+      gemname = "pg"
+      bindbname = "psql"
+    elsif database_adapter.to_s == "mysql"
+      installdb  = 'mysql-server mysql-client libmysqlclient15-dev'
+      dbname = "MySQL"
+      gemname = "mysql"
+      bindbname = "mysql"
+    end
+    installgem = "gem install #{gemname} --no-ri --no-rdoc -q"
+    installdb  = "aptitude -y -q install #{installdb} > /dev/null"
+
+    puts "\n\nNow installing and configuring #{dbname}. If this is your first time"
+    puts "deploying to this Boxcar with this database type the install could take"
+    puts "a couple of minutes, so go get a cup of coffee, relax, and then come back.\n\n"
+
+    print indentstring("Installing and configuring #{dbname}:")
+
+    begin
+      run "! which #{bindbname} >/dev/null"
+
+      run installdb, :pty => true
+      puts "#{dbname} installed"
+
+      run installgem, { :shell => '/bin/bash --login', :pty => true }
+      puts indentstring("#{gemname} gem installed", :end)
+    rescue Capistrano::CommandError => e
+      puts "#{dbname} already installed, skipping."
+    end
+  end
+
+  desc 'Create application database and user'
+  task :createdb, :roles => :admin_web do
+    if database_adapter.to_s == "postgresql"
       psqlconfig = "CREATE ROLE #{database_username} PASSWORD '#{database_password}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN; CREATE DATABASE #{db_production} OWNER #{database_username};"
       put psqlconfig, "/tmp/setupdb.sql"
       run "psql < /tmp/setupdb.sql", :shell => 'su postgres'
-      run "rm -f /tmp/setupdb.sql"
-      puts indentstring("database configured", :end)
     elsif database_adapter.to_s == "mysql"
-      print indentstring("Installing and configuring MySQL:")
-      run 'aptitude -y -q install mysql-server mysql-client libmysqlclient15-dev > /dev/null', :pty => true
-      puts "MySQL installed"
-      run 'gem install mysql --no-ri --no-rdoc -q', :shell => '/bin/bash --login' #need --login so that PATH gets updated
-      puts indentstring("mysql gem installed", :end)
       mysqlconfig = "CREATE DATABASE #{db_production}; GRANT ALL PRIVILEGES ON #{db_production}.* TO #{database_username} IDENTIFIED BY '#{database_password}'"
       put mysqlconfig, "/tmp/setupdb.sql"
       run "mysql < /tmp/setupdb.sql"
-      run "rm -f /tmp/setupdb.sql" #splitting it up keeping consistency between psql/mysql (instead &&ing the commands together)
-      puts indentstring("database configured", :end)
     end
+    run "rm -f /tmp/setupdb.sql"
+    puts indentstring("database configured", :end)
   end
 
   namespace :deploy do
