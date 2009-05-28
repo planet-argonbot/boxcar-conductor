@@ -1,7 +1,8 @@
-# Required for using Mongrel with Capistrano2
-#   gem install palmtree
+# If you will be using mongrel + nginx instead of Passenger, you will
+# need to have the palmtree gem installed (gem install palmtree)
+# and uncomment the following line.
 
-require 'palmtree/recipes/mongrel_cluster'
+#require 'palmtree/recipes/mongrel_cluster'
 
 ########################################################################
 # Rails Boxcar - Capistrano Deployment Recipe
