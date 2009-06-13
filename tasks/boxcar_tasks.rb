@@ -25,6 +25,15 @@ end
 # Only the courageous of ninjas dare pass this!
 ########################################################################
 
+DBNAME    = {:postgresql => "PostgreSQL", :mysql => "MySQL"}
+GEMNAME   = {:postgresql => "pg", :mysql => "mysql"}
+BINDBNAME = {:postgresql => "psql", :mysql => "mysql"}
+INSTALLDB = {:postgresql => "postgresql libpq-dev", :mysql => "mysql-server mysql-client libmysqlclient15-dev"}
+HTTPDNAME = {:nginx => "Nginx", :apache => "Apache"}
+HTTPDSERV = {:nginx => "nginx", :apache => "apache2"}
+
+REEDIR = "/usr/local/lib/ruby-enterprise-current"
+
 role :web, boxcar_server
 role :app, boxcar_server
 role :db, boxcar_server, :primary => true
@@ -47,7 +56,7 @@ set :db_test, database_name[:test]
 set :db_production, database_name[:production]
 
 # Prompt user to set database user/pass
-set :database_username, Proc.new { HighLine.ask(indentstring("What is your database username? |dbuser|")) { |q| q.default = "dbuser" } }
+set :database_username, Proc.new { HighLine.ask(indentstring("What is your database username? |#{user}|")) { |q| q.default = user } }
 set :database_host, Proc.new {
   if setup_type.to_s == "quick"
     "localhost"
@@ -105,13 +114,13 @@ set :database_port, Proc.new {
 # server type
 set :server_type, Proc.new {
   if setup_type.to_s == "quick"
-    :passenger
+    :nginx
   else
     # indenting this prompt by hand for now. Can't figure out how to work in indentstring
     choose do |menu|
       menu.layout = :one_line
-      menu.prompt = "    What web server will you be using?  "
-      menu.choices(:passenger, :mongrel)
+      menu.prompt = "         What web server will you be using?  "
+      menu.choices(:nginx, :apache)
     end
   end
 }
@@ -124,24 +133,6 @@ set :deploy_to, "#{home}/sites/#{application_name}"
 
 set :app_shared_dir, "#{deploy_to}/shared"
 
-
-# mongrel
-# What port number should your mongrel cluster start on?
-set :mongrel_port, Proc.new {
-  HighLine.ask(indentstring("What port will your mongrel cluster start with? |8000|"), Integer) do |q|
-    q.default = 8000
-    q.in = 1024..65536
-  end
-}
-
-# How many instances of mongrel should be in your cluster?
-set :mongrel_servers, Proc.new {
-  HighLine.ask(indentstring("How many mongrel servers should run? |3|"), Integer) do |q|
-    q.default=3
-    q.in = 1..10
-  end
-}
-
 # what type of setup does the user want?
 set :setup_type, Proc.new {
   # another manual indent
@@ -152,81 +143,180 @@ set :setup_type, Proc.new {
   end
 }
 
-set :mongrel_conf, "#{etc}/mongrel_cluster.#{application_name}.conf"
-set :mongrel_pid, "#{log}/mongrel_cluster.#{application_name}.pid"
-set :mongrel_address, '127.0.0.1'
-set :mongrel_environment, :production
-
 set :boxcar_conductor_templates, 'vendor/plugins/boxcar-conductor/templates'
 
 set :today, Time.now.strftime('%b %d, %Y').to_s
 
 namespace :boxcar do
   desc 'Configure your Boxcar environment'
-  task :config, :except => { :no_release => true } do
-    run "mkdir -p #{home}/etc #{home}/log #{home}/sites"
-    run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
+  task :config,  :roles => :admin_web do
     puts ""
     setup_type
-    database.configure
-    setup
-    createdb
-    mongrel.cluster.generate unless server_type == :passenger
+    setup.configdb
+    puts "\n\nBeginning remote setup. This process will install and configure the"
+    puts "database server and Phusion Passenger modules for your Boxcar. Some"
+    puts "of these steps can take a couple of minutes, so relax, get a cup of"
+    puts "coffee and then come back.\n\n"
+    setup.installdbms
+    setup.installgems
+    setup.passenger
     puts ""
-    say "Setup complete. Now run cap deploy:cold and you should be all set."
-    puts ""
-  end
-  before "boxcar:config", "deploy:setup"
-
-  desc 'Install and configure databases'
-  task :setup, :roles => :admin_web do
-    # Setting up some variables. Note that testdb *must* include the negation
-    if database_adapter.to_s == "postgresql"
-      installdb  = 'postgresql libpq-dev'
-      dbname = "PostgreSQL"
-      gemname = "pg"
-      bindbname = "psql"
-    elsif database_adapter.to_s == "mysql"
-      installdb  = 'mysql-server mysql-client libmysqlclient15-dev'
-      dbname = "MySQL"
-      gemname = "mysql"
-      bindbname = "mysql"
-    end
-    installgem = "gem install #{gemname} --no-ri --no-rdoc -q"
-    installdb  = "aptitude -y -q install #{installdb} > /dev/null"
-
-    puts "\n\nNow installing and configuring #{dbname}. If this is your first time"
-    puts "deploying to this Boxcar with this database type the install could take"
-    puts "a couple of minutes, so go get a cup of coffee, relax, and then come back.\n\n"
-
-    print indentstring("Installing and configuring #{dbname}:")
-
-    begin
-      run "! which #{bindbname} >/dev/null"
-
-      run installdb, :pty => true
-      puts "#{dbname} installed"
-
-      run installgem, { :shell => '/bin/bash --login', :pty => true }
-      puts indentstring("#{gemname} gem installed", :end)
-    rescue Capistrano::CommandError => e
-      puts "#{dbname} already installed, skipping."
+    if HighLine.agree(indentstring("Setup is complete. Ready to deploy? [y/n]"))
+      puts "--------------------cap deploy:cold--------------------"
+      if system("cap deploy:cold")
+        puts "--------------------cap deploy:cold--------------------"
+        setup.startweb
+      else
+        puts "Errors encountered during the deploy:cold. Please fix them and then try"
+        puts "running this task again."
+      end
     end
   end
+  before "boxcar:config", "boxcar:setup:createuser", "deploy:setup"
 
-  desc 'Create application database and user'
-  task :createdb, :roles => :admin_web do
-    if database_adapter.to_s == "postgresql"
-      psqlconfig = "CREATE ROLE #{database_username} PASSWORD '#{database_password}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN; CREATE DATABASE #{db_production} OWNER #{database_username};"
-      put psqlconfig, "/tmp/setupdb.sql"
-      run "psql < /tmp/setupdb.sql", :shell => 'su postgres'
-    elsif database_adapter.to_s == "mysql"
-      mysqlconfig = "CREATE DATABASE #{db_production}; GRANT ALL PRIVILEGES ON #{db_production}.* TO #{database_username} IDENTIFIED BY '#{database_password}'"
-      put mysqlconfig, "/tmp/setupdb.sql"
-      run "mysql < /tmp/setupdb.sql"
+  task :testing, :except => { :no_release => true } do
+    HighLine.agree(indentstring("Setup is complete. Ready to deploy? [y/n]"))
+  end
+
+  namespace :setup do
+    desc 'Create deployment user'
+    task :createuser, :roles => :admin_web do
+      print indentstring("Creating user #{user}:")
+      if capture("if [ -d /home/#{user} ]; then echo true; else echo false; fi").chomp.eql?("false")
+        run "adduser --gecos '' --disabled-password #{user}"
+        puts "#{user} created"
+        if capture("if [ -f /home/#{user}/.ssh/authorized_keys ]; then echo true; else echo false; fi").chomp.eql?("false")
+          user_password = "" # Keeping asking for the password until they get it right twice in a row.
+          loop do
+            user_password = HighLine.ask(indentstring("Please enter a password for #{user}:")) { |q| q.echo = "." }
+            password_confirm = HighLine.ask(indentstring("Please retype the password to confirm:")) { |q| q.echo = "." }
+            break if user_password == password_confirm
+          end
+          run "echo '#{user}:#{user_password} | chpasswd -m"
+        else
+          puts indentstring("using root's public key", :end)
+        end
+      else
+        puts "#{user} already exists"
+      end
     end
-    run "rm -f /tmp/setupdb.sql"
-    puts indentstring("database configured", :end)
+
+    desc 'Install and configure databases'
+    task :installdbms, :roles => :admin_web do
+      installdb  = "aptitude -y -q install #{INSTALLDB[database_adapter]} > /dev/null"
+
+      print indentstring("Installing and configuring #{DBNAME[database_adapter]}:")
+
+      begin
+        run "! which #{BINDBNAME[database_adapter]} >/dev/null"
+
+        run installdb, :pty => true
+        puts "#{DBNAME[database_adapter]} installed"
+      rescue Capistrano::CommandError => e
+        puts "#{DBNAME[database_adapter]} already installed, skipping."
+      end
+    end
+    after "boxcar:setup:installdbms", "boxcar:setup:createdb"
+
+    desc 'Create application database and user'
+    task :createdb, :roles => :admin_web do
+      if database_adapter.to_s == "postgresql"
+        psqlconfig = "CREATE ROLE #{database_username} PASSWORD '#{database_password}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN; CREATE DATABASE #{db_production} OWNER #{database_username};"
+        put psqlconfig, "/tmp/setupdb.sql"
+        run "psql < /tmp/setupdb.sql", :shell => 'su postgres'
+      elsif database_adapter.to_s == "mysql"
+        mysqlconfig = "CREATE DATABASE #{db_production}; GRANT ALL PRIVILEGES ON #{db_production}.* TO #{database_username} IDENTIFIED BY '#{database_password}'"
+        put mysqlconfig, "/tmp/setupdb.sql"
+        run "mysql < /tmp/setupdb.sql"
+      end
+      run "rm -f /tmp/setupdb.sql"
+      puts indentstring("database configured", :end)
+    end
+
+    desc 'Set up Phusion Passenger for the selected web server'
+    task :passenger, :roles => :admin_web do
+      print indentstring("Installing #{HTTPDNAME[server_type]} Passenger modules:")
+      begin
+        run "test -h #{REEDIR}/lib/ruby/gems/1.8/gems/passenger-current"
+      rescue Capistrano::CommandError => e
+        puts "failed"
+        puts '\n\nPassenger & Ruby Enterprise Edition do not appear to be installed correctly. Please'
+        puts 'contact support for further assistance. Aborting.\n\n'
+        abort
+      end
+      begin
+        if server_type == :nginx
+          other_server = :apache
+          run "if [ ! -f #{REEDIR}/lib/ruby/gems/1.8/gems/passenger-current/ext/nginx/HelperServer ]; then #{REEDIR}/bin/passenger-install-nginx-module --auto --prefix=/usr/local/lib/nginx --auto-download > /dev/null 2>&1 && rm -rf /usr/local/lib/nginx; fi"
+        elsif server_type == :apache
+          other_server = :nginx
+          run "if [ ! -f #{REEDIR}/lib/ruby/gems/1.8/gems/passenger-current/ext/apache2/mod_passenger.so ]; then #{REEDIR}/bin/passenger-install-apache2-module --auto >/dev/null 2>&1; fi"
+        end
+        puts "#{HTTPDNAME[server_type]} module installed"
+        run "sysv-rc-conf #{HTTPDSERV[:nginx]} on && sysv-rc-conf #{HTTPDSERV[:apache]} off"
+        puts indentstring("#{HTTPDNAME[server_type]} startup enabled", :end)
+      rescue Capistrano::CommandError => e
+        puts "\n\nAn unhandled error occured while attempting to install Passenger. Aborting.\n\n"
+        abort
+      end
+    end
+
+    desc "Install necessary gems on Boxcar"
+    task :installgems, :roles => :admin_web do
+      eval(File.open("config/environment.rb").grep(/RAILS_GEM_VERSION/).first) if File.exists?("config/environment.rb")
+      installcmd="#{REEDIR}/bin/gem install --no-rdoc --no-ri -q "
+      checkcmd="#{REEDIR}/bin/gem list -i "
+      print indentstring("Installing gems:")
+      begin
+        run(checkcmd + "-v=#{RAILS_GEM_VERSION} rails")
+        puts "rails #{RAILS_GEM_VERSION} already installed"
+      rescue
+        run(installcmd + "-v=#{RAILS_GEM_VERSION} rails")
+        puts "rails #{RAILS_GEM_VERSION} installed"
+      end
+      begin
+        capture(checkcmd + "#{GEMNAME[database_adapter]}")
+        puts indentstring("#{GEMNAME[database_adapter]} already installed", :end)
+      rescue
+        run("#{REEDIR}/bin/gem install --no-rdoc --no-ri -q #{GEMNAME[database_adapter]}")
+        puts indentstring("#{GEMNAME[database_adapter]} installed", :end)
+      end
+    end
+
+    desc "Create remote directory structure"
+    task :createdirs, :expect => { :no_release => true } do
+      run "mkdir -p #{home}/log #{home}/sites"
+      run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
+    end
+
+    desc "Configure your Boxcar database"
+    task :configdb, :except => { :no_release => true } do
+      database_configuration = render_erb_template("#{boxcar_conductor_templates}/databases/#{database_adapter}.yml.erb")
+      put database_configuration, "#{app_shared_dir}/config/database.yml"
+    end
+    before "boxcar:setup:configdb", "boxcar:setup:createdirs"
+
+    task :startweb, :roles => :admin_web do
+      print indentstring("Activating #{HTTPDNAME[server_type]}:")
+      begin
+        run "/usr/local/bin/activate-server -a #{user} #{application_name} > /dev/null 2>&1"
+        puts "success!"
+        print indentstring("Your application should now be available at:")
+        puts "http://#{boxcar_server}\n"
+      rescue
+        puts "failed!"
+        puts "\nPlease log into your Boxcar as root and run 'activate-server' to"
+        puts "get more detailed failure information.\n"
+      end
+    end
+
+    task :testweb, :roles => :admin_web do
+      begin
+        stream "/etc/init.d/nginx restart"
+      rescue
+        puts "failed"
+      end
+    end
   end
 
   namespace :deploy do
@@ -234,24 +324,6 @@ namespace :boxcar do
     task :link_files, :except => { :no_release => true } do
       run "ln -nfs #{app_shared_dir}/config/database.yml #{release_path}/config/database.yml"
       run "ln -nfs #{app_shared_dir}/log #{release_path}/log"
-    end
-  end
-
-  namespace :database do
-    desc "Configure your Boxcar database"
-    task :configure, :except => { :no_release => true } do
-      database_configuration = render_erb_template("#{boxcar_conductor_templates}/databases/#{database_adapter}.yml.erb")
-      put database_configuration, "#{app_shared_dir}/config/database.yml"
-    end
-  end
-
-  namespace :mongrel do
-    namespace :cluster do
-      desc "Generate mongrel cluster configuration"
-      task :generate, :except => { :no_release => true } do
-        mongrel_cluster_configuration = render_erb_template("#{boxcar_conductor_templates}/mongrel_cluster.yml.erb")
-        put mongrel_cluster_configuration, mongrel_conf
-      end
     end
   end
 
