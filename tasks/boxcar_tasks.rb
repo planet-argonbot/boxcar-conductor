@@ -278,7 +278,7 @@ namespace :boxcar do
         capture(checkcmd + "#{GEMNAME[database_adapter]}")
         puts indentstring("#{GEMNAME[database_adapter]} already installed", :end)
       rescue
-        run("#{REEDIR}/bin/gem install --no-rdoc --no-ri -q #{GEMNAME[database_adapter]}")
+        run(installcmd + "#{GEMNAME[database_adapter]}")
         puts indentstring("#{GEMNAME[database_adapter]} installed", :end)
       end
     end
