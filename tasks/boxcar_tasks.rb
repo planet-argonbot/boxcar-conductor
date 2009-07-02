@@ -261,7 +261,7 @@ namespace :boxcar do
         puts "#{HTTPDNAME[server_type]} module installed"
         run "sysv-rc-conf #{HTTPDSERV[server_type]} on && sysv-rc-conf #{HTTPDSERV[other_server]} off"
         puts indentstring("#{HTTPDNAME[server_type]} startup enabled", :end)
-        run "if pidof #{HTTPDEXEC[other_server]} >/dev/null; then /usr/sbin/invoke-rc.d #{HTTPDSERV[other_server]} stop && /usr/sbin/invoke-rc.d #{HTTPDSERV[server_type]} start"
+        run "if pidof #{HTTPDEXEC[other_server]} >/dev/null; then /usr/sbin/invoke-rc.d #{HTTPDSERV[other_server]} stop && /usr/sbin/invoke-rc.d #{HTTPDSERV[server_type]} start; fi"
         puts indentstring("#{HTTPDNAME[other_server]} disabled")
       rescue Capistrano::CommandError => e
         puts "\n\nAn unhandled error occured while attempting to install Passenger. Aborting.\n\n"
