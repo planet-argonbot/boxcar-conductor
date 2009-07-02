@@ -58,7 +58,7 @@ set :db_production, database_name[:production]
 
 # Prompt user to set database user/pass
 set :database_username, Proc.new {
-  if setyp_type.to_s == "quick"
+  if setup_type.to_s == "quick"
     "#{user}"
   else
     HighLine.ask(indentstring("What is the database username? |#{user}|")) { |q| q.default = user }
