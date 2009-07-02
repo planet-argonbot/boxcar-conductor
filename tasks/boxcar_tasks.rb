@@ -263,7 +263,11 @@ namespace :boxcar do
 
     desc "Install necessary gems on Boxcar"
     task :installgems, :roles => :admin_web do
-      eval(File.open("config/environment.rb").grep(/RAILS_GEM_VERSION/).first) if File.exists?("config/environment.rb")
+      if File.exists?("config/environment.rb") && ! File.open("config/environment.rb").grep(/RAILS_GEM_VERSION/).first.nil?
+        eval(File.open("config/environment.rb").grep(/RAILS_GEM_VERSION/).first)
+      else
+        RAILS_GEM_VERSION='2.3.2' # this should always be set to the most recent version installed on the Boxcar
+      end
       installcmd="#{REEDIR}/bin/gem install --no-rdoc --no-ri -q "
       checkcmd="#{REEDIR}/bin/gem list -i "
       print indentstring("Installing gems:")
