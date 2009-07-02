@@ -31,6 +31,7 @@ BINDBNAME = {:postgresql => "psql", :mysql => "mysql"}
 INSTALLDB = {:postgresql => "postgresql libpq-dev", :mysql => "mysql-server mysql-client libmysqlclient15-dev"}
 HTTPDNAME = {:nginx => "Nginx", :apache => "Apache"}
 HTTPDSERV = {:nginx => "nginx", :apache => "apache2"}
+HTTPDEXEC = {:nginx => "/usr/bin/nginx", :apache => "/usr/sbin/apache2"}
 
 REEDIR = "/usr/local/lib/ruby-enterprise-current"
 
@@ -56,7 +57,13 @@ set :db_test, database_name[:test]
 set :db_production, database_name[:production]
 
 # Prompt user to set database user/pass
-set :database_username, Proc.new { HighLine.ask(indentstring("What is your database username? |#{user}|")) { |q| q.default = user } }
+set :database_username, Proc.new {
+  if setyp_type.to_s == "quick"
+    "#{user}"
+  else
+    HighLine.ask(indentstring("What is the database username? |#{user}|")) { |q| q.default = user }
+  end
+}
 set :database_host, Proc.new {
   if setup_type.to_s == "quick"
     "localhost"
@@ -127,7 +134,6 @@ set :server_type, Proc.new {
 
 # directories
 set :home, "/home/#{user}"
-set :etc, "#{home}/etc"
 set :log, "#{home}/log"
 set :deploy_to, "#{home}/sites/#{application_name}"
 
@@ -253,8 +259,10 @@ namespace :boxcar do
           run "if [ ! -f #{REEDIR}/lib/ruby/gems/1.8/gems/passenger-current/ext/apache2/mod_passenger.so ]; then #{REEDIR}/bin/passenger-install-apache2-module --auto >/dev/null 2>&1; fi"
         end
         puts "#{HTTPDNAME[server_type]} module installed"
-        run "sysv-rc-conf #{HTTPDSERV[:nginx]} on && sysv-rc-conf #{HTTPDSERV[:apache]} off"
+        run "sysv-rc-conf #{HTTPDSERV[server_type]} on && sysv-rc-conf #{HTTPDSERV[other_server]} off"
         puts indentstring("#{HTTPDNAME[server_type]} startup enabled", :end)
+        run "if pidof #{HTTPDEXEC[other_server]} >/dev/null; then /usr/sbin/invoke-rc.d #{HTTPDSERV[other_server]} stop && /usr/sbin/invoke-rc.d #{HTTPDSERV[server_type]} start"
+        puts indentstring("#{HTTPDNAME[other_server]} disabled")
       rescue Capistrano::CommandError => e
         puts "\n\nAn unhandled error occured while attempting to install Passenger. Aborting.\n\n"
         abort
@@ -288,7 +296,7 @@ namespace :boxcar do
     end
 
     desc "Create remote directory structure"
-    task :createdirs, :expect => { :no_release => true } do
+    task :createdirs, :except => { :no_release => true } do
       run "mkdir -p #{home}/log #{home}/sites"
       run "mkdir -p #{app_shared_dir}/config #{app_shared_dir}/log"
     end
@@ -311,14 +319,6 @@ namespace :boxcar do
         puts "failed!"
         puts "\nPlease log into your Boxcar as root and run 'activate-server' to"
         puts "get more detailed failure information.\n"
-      end
-    end
-
-    task :testweb, :roles => :admin_web do
-      begin
-        stream "/etc/init.d/nginx restart"
-      rescue
-        puts "failed"
       end
     end
   end
