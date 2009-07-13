@@ -198,7 +198,7 @@ namespace :boxcar do
             password_confirm = HighLine.ask(indentstring("Please retype the password to confirm:")) { |q| q.echo = "." }
             break if user_password == password_confirm
           end
-          run "echo '#{user}:#{user_password} | chpasswd -m"
+          run "echo '#{user}:#{user_password}' | chpasswd -m"
         else
           puts indentstring("using root's public key", :end)
         end
